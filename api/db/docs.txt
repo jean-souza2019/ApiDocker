@@ -1,0 +1,55 @@
+TAGS:
+    -t = tag -> renomeando
+    -f = especifica arquivo Dockerfile para gerar imagem
+    -d = detach -> executa em background o nosso terminal
+    -rm = se o container existir, remove ele e cria um novo
+    --name = renomear
+    exe = executar comandos dentro de um container
+    -i = modo interativo - executar o shell
+    -p = password
+    -u = usuario
+    -it usar terminal
+
+######################################
+
+-- criar container mysql
+docker build -t mysql-image -f api/db/Dockerfile .
+
+-- iniciar container de mysql
+docker run -d --rm --name mysql-container mysql-image
+    -- iniciar container de mysql com volume
+    docker run -d -v $(pwd)/api/db/data:/var/lib/mysql -p 9009:9009 --rm --name mysql-container mysql-image
+
+-- acessar container
+docker exec -it mysql-container /bin/bash
+
+-- acessar banco
+mysql -uroot -proot
+
+-- executar script para criar banco
+docker exec -i mysql-container mysql -uroot -papiteste < api/db/script.sql
+
+
+
+
+
+-- criar container node
+docker build -t node-nodege -f api/Dockerfile .
+
+-- criar imagem node
+docker run -d -v $(pwd)/api:/home/node/app -p 9001:9001 --rm --name node-container node-nodege
+docker run -d -v $(pwd)/api:/home/node/app -p 9001:9001 --link mysql-container --rm --name node-container node-nodege
+
+
+-- caso acontecer algum problema ao conectar o banco:
+    ALTER USER 'root' IDENTIFIED WITH mysql_native_password BY 'root'
+    flush privileges;
+
+
+
+
+-- Criar imagem php
+    docker build -t php-image -f website/Dockerfile .
+
+-- Rodar imagem php
+    docker run -d -v $(pwd)/website:/var/www/html -p 8888:80 --link node-container --rm --name php-container php-image
